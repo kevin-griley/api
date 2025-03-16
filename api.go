@@ -9,43 +9,93 @@ import (
 	"os"
 	"time"
 
+	docs "github.com/kevin-griley/api/docs"
+	httpSwagger "github.com/swaggo/http-swagger"
+
 	jwt "github.com/golang-jwt/jwt/v5"
 )
 
-type APIServer struct {
+type ApiConfig struct {
 	listenAddress string
 	store         Storage
 }
 
-func NewAPIServer(listenAddress string, store Storage) *APIServer {
-	return &APIServer{
-		listenAddress: listenAddress,
+func NewApiConfig() ApiConfig {
+
+	store, err := NewPostgresStore()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := store.Init(); err != nil {
+		log.Fatal(err)
+	}
+
+	return ApiConfig{
+		listenAddress: ":3000",
 		store:         store,
 	}
 }
 
+type APIServer struct {
+	config ApiConfig
+}
+
+func NewAPIServer(config ApiConfig) *APIServer {
+	return &APIServer{config}
+}
+
+//	@title			API
+//	@description	API for Tofflemire Freight Services
+//
+// @BasePath					/
+// @securityDefinitions.apikey	ApiKeyAuth
+// @in							header
+// @name						Authorization
+// @description
 func (s *APIServer) Run() {
+
+	// Docs
+	docs.SwaggerInfo.Host = "localhost:3000"
+
 	router := http.NewServeMux()
+
+	router.HandleFunc("GET /api/", httpSwagger.WrapHandler)
 
 	router.HandleFunc("POST /login", makeHandlerFunc(s.handleLogin))
 	router.HandleFunc("POST /register", makeHandlerFunc(s.handleCreateUser))
 
 	router.HandleFunc("GET /account", makeHandlerFunc(s.handleGet))
-	router.HandleFunc("GET /account/{id}", withJWTAuth(makeHandlerFunc(s.handleGetByID), s.store))
+	router.HandleFunc("GET /account/{id}", withJWTAuth(makeHandlerFunc(s.handleGetByID), s.config.store))
 	router.HandleFunc("POST /account", makeHandlerFunc(s.handleCreateAccount))
 	router.HandleFunc("DELETE /account/{id}", makeHandlerFunc(s.handleDeleteAccount))
 
-	log.Println("Starting server on", s.listenAddress)
-	http.ListenAndServe(s.listenAddress, router)
+	log.Println("Starting server on", s.config.listenAddress)
+
+	http.ListenAndServe(s.config.listenAddress, router)
 }
 
+type TokenResponse struct {
+	Token string `json:"token"`
+}
+
+// @Summary			Login
+// @Description		Login to the system
+// @Tags			Auth
+// @Accept			json
+// @Produce			json
+// @Param			body	body		LoginRequest	true	"Login Request"
+// @Success			200		{object}	TokenResponse	"Token Response"
+// @Failure			400		{object} 	ApiError	"Bad Request"
+// @Failure			401		{object} 	ApiError	"Unauthorized"
+// @Router			/login	[post]
 func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) *ApiError {
 	rBody := new(LoginRequest)
 	if err := json.NewDecoder(r.Body).Decode(rBody); err != nil {
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
-	user, err := s.store.GetUserByEmail(rBody.Email)
+	user, err := s.config.store.GetUserByEmail(rBody.Email)
 	if err != nil {
 		return &ApiError{http.StatusUnauthorized, "invalid user or password"}
 	}
@@ -59,7 +109,7 @@ func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) *ApiErro
 		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
 
-	return WriteJSON(w, http.StatusOK, map[string]string{"token": tokenString})
+	return WriteJSON(w, http.StatusOK, TokenResponse{Token: tokenString})
 }
 
 func (s *APIServer) handleCreateUser(w http.ResponseWriter, r *http.Request) *ApiError {
@@ -73,7 +123,7 @@ func (s *APIServer) handleCreateUser(w http.ResponseWriter, r *http.Request) *Ap
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
-	userID, err := s.store.CreateUser(user)
+	userID, err := s.config.store.CreateUser(user)
 	if err != nil {
 		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
@@ -84,7 +134,7 @@ func (s *APIServer) handleCreateUser(w http.ResponseWriter, r *http.Request) *Ap
 }
 
 func (s *APIServer) handleGet(w http.ResponseWriter, r *http.Request) *ApiError {
-	accounts, err := s.store.GetAccounts()
+	accounts, err := s.config.store.GetAccounts()
 	if err != nil {
 		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
@@ -97,7 +147,7 @@ func (s *APIServer) handleGetByID(w http.ResponseWriter, r *http.Request) *ApiEr
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
-	account, err := s.store.GetAccountByID(idStr)
+	account, err := s.config.store.GetAccountByID(idStr)
 	if err != nil {
 		return &ApiError{http.StatusNotFound, err.Error()}
 	}
@@ -111,7 +161,7 @@ func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) 
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
-	if err := s.store.DeleteAccount(idStr); err != nil {
+	if err := s.config.store.DeleteAccount(idStr); err != nil {
 		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
 
@@ -125,7 +175,7 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 	}
 
 	account := NewAccount(createAccountReq.Name)
-	accountID, err := s.store.CreateAccount(account)
+	accountID, err := s.config.store.CreateAccount(account)
 	if err != nil {
 		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
@@ -224,6 +274,7 @@ func createJWT(user *User) (string, error) {
 	claims := &jwt.RegisteredClaims{
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		NotBefore: jwt.NewNumericDate(time.Now()),
 		Issuer:    "mycartage",
 		Subject:   user.ID,
 	}

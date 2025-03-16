@@ -1,0 +1,54 @@
+definitions:
+  main.ApiError:
+    properties:
+      error:
+        type: string
+      status:
+        type: integer
+    type: object
+  main.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  main.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login to the system
+      parameters:
+      - description: Login Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/main.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token Response
+          schema:
+            $ref: '#/definitions/main.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ApiError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.ApiError'
+      summary: Login
+      tags:
+      - Auth
+swagger: "2.0"

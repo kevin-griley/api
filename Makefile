@@ -1,4 +1,4 @@
-build: 
+build: swag
 	@go build -o bin/api
 
 run: build
@@ -6,3 +6,6 @@ run: build
 
 test:
 	@go test -v ./...
+
+swag:
+	@swag init 
