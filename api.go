@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -26,55 +27,55 @@ func NewAPIServer(listenAddress string, store Storage) *APIServer {
 func (s *APIServer) Run() {
 	router := http.NewServeMux()
 
-	router.HandleFunc("POST /login", makeHTTPHandlerFunc(s.handleLogin))
-	router.HandleFunc("POST /register", makeHTTPHandlerFunc(s.handleCreateUser))
+	router.HandleFunc("POST /login", makeHandlerFunc(s.handleLogin))
+	router.HandleFunc("POST /register", makeHandlerFunc(s.handleCreateUser))
 
-	router.HandleFunc("GET /account", makeHTTPHandlerFunc(s.handleGet))
-	router.HandleFunc("GET /account/{id}", withJWTAuth(makeHTTPHandlerFunc(s.handleGetByID), s.store))
-	router.HandleFunc("POST /account", makeHTTPHandlerFunc(s.handleCreateAccount))
-	router.HandleFunc("DELETE /account/{id}", makeHTTPHandlerFunc(s.handleDeleteAccount))
+	router.HandleFunc("GET /account", makeHandlerFunc(s.handleGet))
+	router.HandleFunc("GET /account/{id}", withJWTAuth(makeHandlerFunc(s.handleGetByID), s.store))
+	router.HandleFunc("POST /account", makeHandlerFunc(s.handleCreateAccount))
+	router.HandleFunc("DELETE /account/{id}", makeHandlerFunc(s.handleDeleteAccount))
 
 	log.Println("Starting server on", s.listenAddress)
 	http.ListenAndServe(s.listenAddress, router)
 }
 
-func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) *ApiError {
 	rBody := new(LoginRequest)
 	if err := json.NewDecoder(r.Body).Decode(rBody); err != nil {
-		return err
+		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
 	user, err := s.store.GetUserByEmail(rBody.Email)
 	if err != nil {
-		return WriteJSON(w, http.StatusUnauthorized, ApiError{"invalid user or password"})
+		return &ApiError{http.StatusUnauthorized, "invalid user or password"}
 	}
 
 	if !user.ValidPassword(rBody.Password) {
-		return WriteJSON(w, http.StatusUnauthorized, ApiError{"invalid user or password"})
+		return &ApiError{http.StatusUnauthorized, "invalid user or password"}
 	}
 
 	tokenString, err := createJWT(user)
 	if err != nil {
-		return err
+		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
 
 	return WriteJSON(w, http.StatusOK, map[string]string{"token": tokenString})
 }
 
-func (s *APIServer) handleCreateUser(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleCreateUser(w http.ResponseWriter, r *http.Request) *ApiError {
 	registerReq := new(LoginRequest)
 	if err := json.NewDecoder(r.Body).Decode(registerReq); err != nil {
-		return err
+		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
 	user, err := NewUser(registerReq.Email, registerReq.Password)
 	if err != nil {
-		return err
+		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
 	userID, err := s.store.CreateUser(user)
 	if err != nil {
-		return err
+		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
 
 	user.ID = userID
@@ -82,51 +83,51 @@ func (s *APIServer) handleCreateUser(w http.ResponseWriter, r *http.Request) err
 
 }
 
-func (s *APIServer) handleGet(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleGet(w http.ResponseWriter, r *http.Request) *ApiError {
 	accounts, err := s.store.GetAccounts()
 	if err != nil {
-		return err
+		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
 	return WriteJSON(w, http.StatusOK, accounts)
 }
 
-func (s *APIServer) handleGetByID(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleGetByID(w http.ResponseWriter, r *http.Request) *ApiError {
 	idStr, err := getID(r)
 	if err != nil {
-		return err
+		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
 	account, err := s.store.GetAccountByID(idStr)
 	if err != nil {
-		return err
+		return &ApiError{http.StatusNotFound, err.Error()}
 	}
 	return WriteJSON(w, http.StatusOK, account)
 }
 
-func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) *ApiError {
 
 	idStr, err := getID(r)
 	if err != nil {
-		return err
+		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
 	if err := s.store.DeleteAccount(idStr); err != nil {
-		return err
+		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
 
 	return WriteJSON(w, http.StatusOK, map[string]string{"deleted": idStr})
 }
 
-func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) *ApiError {
 	createAccountReq := new(CreateAccountRequest)
 	if err := json.NewDecoder(r.Body).Decode(createAccountReq); err != nil {
-		return err
+		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
 	account := NewAccount(createAccountReq.Name)
 	accountID, err := s.store.CreateAccount(account)
 	if err != nil {
-		return err
+		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
 
 	account.ID = accountID
@@ -135,20 +136,13 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 
 }
 
-func WriteJSON(w http.ResponseWriter, status int, v any) error {
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(status)
-	return json.NewEncoder(w).Encode(v)
-}
-
 func permissionDenied(w http.ResponseWriter) {
-	WriteJSON(w, http.StatusUnauthorized, ApiError{"Permission Denied"})
+	WriteJSON(w, http.StatusUnauthorized, "permission denied")
+
 }
 
 func withJWTAuth(handlerFunc http.HandlerFunc, s Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("calling withJWTAuth middleware")
-
 		tokenStr := r.Header.Get("Authorization")
 		token, err := validateJWT(tokenStr)
 		if err != nil {
@@ -200,16 +194,28 @@ func validateJWT(tokenStr string) (*jwt.Token, error) {
 	})
 }
 
-type apiFunc func(w http.ResponseWriter, r *http.Request) error
-
-type ApiError struct {
-	Error string `json:"error"`
+func WriteJSON(w http.ResponseWriter, status int, v interface{}) *ApiError {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(status)
+	err := json.NewEncoder(w).Encode(v)
+	if err != nil {
+		return &ApiError{http.StatusInternalServerError, err.Error()}
+	}
+	return nil
 }
 
-func makeHTTPHandlerFunc(f apiFunc) http.HandlerFunc {
+type apiFunc func(w http.ResponseWriter, r *http.Request) *ApiError
+
+type ApiError struct {
+	Status int    `json:"status"`
+	Error  string `json:"error"`
+}
+
+func makeHandlerFunc(f apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := f(w, r); err != nil {
-			WriteJSON(w, http.StatusBadRequest, ApiError{err.Error()})
+			slog.Error("API Error", "status", err.Status, "error", err.Error)
+			WriteJSON(w, err.Status, err)
 		}
 	}
 }
@@ -224,7 +230,6 @@ func createJWT(user *User) (string, error) {
 
 	secret := os.Getenv("JWT_SECRET")
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
 	return token.SignedString([]byte(secret))
 
 }
