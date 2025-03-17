@@ -1,2 +1,5 @@
 bin
 .env
+
+# sst
+.sst
