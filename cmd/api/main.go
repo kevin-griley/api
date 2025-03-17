@@ -6,12 +6,12 @@ import (
 	"net/http"
 
 	"github.com/kevin-griley/api/db"
-	docs "github.com/kevin-griley/api/docs"
+	"github.com/kevin-griley/api/docs"
 	"github.com/kevin-griley/api/handlers"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
-//	@title			API
+//	@title			Rest API
 //	@description	API for Tofflemire Freight Services
 //
 // @BasePath					/
@@ -30,7 +30,7 @@ func main() {
 
 	router := http.NewServeMux()
 
-	router.HandleFunc("GET /api/", httpSwagger.WrapHandler)
+	router.HandleFunc("GET /docs/", httpSwagger.WrapHandler)
 
 	router.HandleFunc("POST /login", wrapError(handlers.HandlePostLogin))
 	router.HandleFunc("POST /register", wrapError(handlers.HandlePostUser))

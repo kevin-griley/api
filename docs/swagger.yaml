@@ -45,7 +45,7 @@ definitions:
 info:
   contact: {}
   description: API for Tofflemire Freight Services
-  title: API
+  title: Rest API
 paths:
   /login:
     post:

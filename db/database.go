@@ -12,7 +12,7 @@ var Psql *sql.DB
 
 func CreateDatabase() (*sql.DB, error) {
 	godotenv.Load()
-	connStr := os.Getenv("GOOSE_DBSTRING")
+	connStr := os.Getenv("DATABASE_URL")
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {

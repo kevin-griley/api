@@ -2,7 +2,7 @@
     "swagger": "2.0",
     "info": {
         "description": "API for Tofflemire Freight Services",
-        "title": "API",
+        "title": "Rest API",
         "contact": {}
     },
     "basePath": "/",

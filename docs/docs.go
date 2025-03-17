@@ -184,7 +184,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "API",
+	Title:            "Rest API",
 	Description:      "API for Tofflemire Freight Services",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
