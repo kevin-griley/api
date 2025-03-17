@@ -24,6 +24,9 @@ make up
 
 # Generate swag init & build & run app
 make run
+
+# Run React Native Client
+make native
 ```
 
 ## Documentation
@@ -39,9 +42,11 @@ api/
 ├── db
 ├── docs
 ├── handlers
+├── native
 ├── types
 ├── Makefile
 ├── README.md
+├── sst.config.ts
 └── ...
 ```
 

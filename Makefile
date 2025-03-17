@@ -21,3 +21,8 @@ reset:
 
 create: 
 	@godotenv -f .env goose create $(name) sql
+
+.PHONY: native
+
+native:
+	@cd ./native && npm install && npm run ios
