@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.LoginRequest"
+                            "$ref": "#/definitions/handlers.LoginRequest"
                         }
                     }
                 ],
@@ -43,19 +43,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Token Response",
                         "schema": {
-                            "$ref": "#/definitions/main.TokenResponse"
+                            "$ref": "#/definitions/handlers.TokenResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/main.ApiError"
+                            "$ref": "#/definitions/handlers.ApiError"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/main.ApiError"
+                            "$ref": "#/definitions/handlers.ApiError"
                         }
                     }
                 }
@@ -63,7 +63,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "main.ApiError": {
+        "handlers.ApiError": {
             "type": "object",
             "properties": {
                 "error": {
@@ -74,7 +74,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.LoginRequest": {
+        "handlers.LoginRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -85,13 +85,20 @@ const docTemplate = `{
                 }
             }
         },
-        "main.TokenResponse": {
+        "handlers.TokenResponse": {
             "type": "object",
             "properties": {
                 "token": {
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
@@ -100,10 +107,10 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "",
 	Host:             "",
-	BasePath:         "",
+	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "API",
+	Description:      "API for Tofflemire Freight Services",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

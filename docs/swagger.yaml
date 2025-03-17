@@ -1,25 +1,28 @@
+basePath: /
 definitions:
-  main.ApiError:
+  handlers.ApiError:
     properties:
       error:
         type: string
       status:
         type: integer
     type: object
-  main.LoginRequest:
+  handlers.LoginRequest:
     properties:
       email:
         type: string
       password:
         type: string
     type: object
-  main.TokenResponse:
+  handlers.TokenResponse:
     properties:
       token:
         type: string
     type: object
 info:
   contact: {}
+  description: API for Tofflemire Freight Services
+  title: API
 paths:
   /login:
     post:
@@ -32,23 +35,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/main.LoginRequest'
+          $ref: '#/definitions/handlers.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Token Response
           schema:
-            $ref: '#/definitions/main.TokenResponse'
+            $ref: '#/definitions/handlers.TokenResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/main.ApiError'
+            $ref: '#/definitions/handlers.ApiError'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/main.ApiError'
+            $ref: '#/definitions/handlers.ApiError'
       summary: Login
       tags:
       - Auth
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

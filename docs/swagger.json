@@ -1,8 +1,11 @@
 {
     "swagger": "2.0",
     "info": {
+        "description": "API for Tofflemire Freight Services",
+        "title": "API",
         "contact": {}
     },
+    "basePath": "/",
     "paths": {
         "/login": {
             "post": {
@@ -24,7 +27,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.LoginRequest"
+                            "$ref": "#/definitions/handlers.LoginRequest"
                         }
                     }
                 ],
@@ -32,19 +35,19 @@
                     "200": {
                         "description": "Token Response",
                         "schema": {
-                            "$ref": "#/definitions/main.TokenResponse"
+                            "$ref": "#/definitions/handlers.TokenResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/main.ApiError"
+                            "$ref": "#/definitions/handlers.ApiError"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/main.ApiError"
+                            "$ref": "#/definitions/handlers.ApiError"
                         }
                     }
                 }
@@ -52,7 +55,7 @@
         }
     },
     "definitions": {
-        "main.ApiError": {
+        "handlers.ApiError": {
             "type": "object",
             "properties": {
                 "error": {
@@ -63,7 +66,7 @@
                 }
             }
         },
-        "main.LoginRequest": {
+        "handlers.LoginRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -74,13 +77,20 @@
                 }
             }
         },
-        "main.TokenResponse": {
+        "handlers.TokenResponse": {
             "type": "object",
             "properties": {
                 "token": {
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }
