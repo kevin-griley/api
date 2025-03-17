@@ -1,14 +1,16 @@
-# API Project
+# PMC Management System
 
-This is a simple API project built with Go.
+The PMC (ULD) Management System is a robust platform for managing Unit Load Devices (ULDs) across airlines, carriers, and warehouses. The backend is built in Go while the mobile client is developed using React Native.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Go installed on your system
+- Golang (v1.23 or higher recommended)
+- Node.js and npm
 - Make utility
 - Postgres database
+- (Optional) Docker for containerized environments
 
 ### Running the Project
 
@@ -31,7 +33,8 @@ make native
 
 ## Documentation
 
-API documentation is available at `/docs` endpoint when the server is running.
+- **API Docs:** Once the backend server is running, the API documentation is available at the `/docs` endpoint (e.g., [http://localhost:3000/docs](http://localhost:3000/docs)).
+- **Frontend Documentation:** Details for the React Native client can be found within the `/native` directory.
 
 ## Project Structure
 
@@ -52,4 +55,4 @@ api/
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

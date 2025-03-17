@@ -35,7 +35,7 @@ func main() {
 	router.HandleFunc("POST /login", wrapError(handlers.HandlePostLogin))
 	router.HandleFunc("POST /register", wrapError(handlers.HandlePostUser))
 
-	log.Println("Starting server on", listenAddress)
+	log.Println("Open Dev Docs", "http://localhost:3000/docs")
 
 	http.ListenAndServe(listenAddress, router)
 }
