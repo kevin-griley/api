@@ -1,5 +1,28 @@
 basePath: /
 definitions:
+  data.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_admin:
+        type: boolean
+      is_deleted:
+        type: boolean
+      is_verified:
+        type: boolean
+      last_request:
+        type: string
+      password:
+        type: string
+      updated_at:
+        type: string
+      user_name:
+        type: string
+    type: object
   handlers.ApiError:
     properties:
       error:
@@ -52,6 +75,32 @@ paths:
           schema:
             $ref: '#/definitions/handlers.ApiError'
       summary: Login
+      tags:
+      - Auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user
+      parameters:
+      - description: Login Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User
+          schema:
+            $ref: '#/definitions/data.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ApiError'
+      summary: Create User
       tags:
       - Auth
 securityDefinitions:

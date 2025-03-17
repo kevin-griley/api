@@ -12,6 +12,15 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+// @Summary			Create User
+// @Description		Create a new user
+// @Tags			Auth
+// @Accept			json
+// @Produce			json
+// @Param			body	body		LoginRequest	true	"Login Request"
+// @Success         200		{object}	data.User	"User"
+// @Failure         400		{object} 	ApiError	"Bad Request"
+// @Router			/register	[post]
 func HandlePostUser(w http.ResponseWriter, r *http.Request) *ApiError {
 	registerReq := new(LoginRequest)
 	if err := json.NewDecoder(r.Body).Decode(registerReq); err != nil {

@@ -6,16 +6,15 @@ CREATE EXTENSION IF NOT EXISTS "postgis" WITH SCHEMA "public";
 
 CREATE TABLE IF NOT EXISTS "User" (
     "id" TEXT NOT NULL DEFAULT gen_random_uuid(),
-    "createdAt" TIMESTAMPTZ NOT NULL,
-    "updatedAt" TIMESTAMPTZ NOT NULL,
-    "userName" CITEXT,
+    "created_at" TIMESTAMPTZ NOT NULL,
+    "updated_at" TIMESTAMPTZ NOT NULL,
+    "user_name" CITEXT NOT NULL,
     "email" CITEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "lastRequest" TIMESTAMPTZ NOT NULL,
-    "isAdmin" BOOLEAN NOT NULL DEFAULT FALSE,
-    "isVerified" BOOLEAN NOT NULL DEFAULT FALSE,
-    "isDisabled" BOOLEAN NOT NULL DEFAULT FALSE,
-    "isDeleted" BOOLEAN NOT NULL DEFAULT FALSE,
+    "last_request" TIMESTAMPTZ NOT NULL,
+    "is_admin" BOOLEAN NOT NULL DEFAULT FALSE,
+    "is_verified" BOOLEAN NOT NULL DEFAULT FALSE,
+    "is_deleted" BOOLEAN NOT NULL DEFAULT FALSE,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 
