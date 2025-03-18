@@ -10,12 +10,17 @@ import (
 	"github.com/kevin-griley/api/data"
 )
 
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 type TokenResponse struct {
 	Token string `json:"token"`
 }
 
-// @Summary			Login
-// @Description		Login to the system
+// @Summary			Retrive token for bearer authentication
+// @Description		Retrive token for bearer authentication
 // @Tags			Auth
 // @Accept			json
 // @Produce			json
@@ -55,7 +60,7 @@ func CreateJWT(user *data.User) (string, error) {
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		NotBefore: jwt.NewNumericDate(time.Now()),
 		Issuer:    "mycartage",
-		Subject:   user.ID,
+		Subject:   user.ID.String(),
 	}
 
 	secret := os.Getenv("JWT_SECRET")

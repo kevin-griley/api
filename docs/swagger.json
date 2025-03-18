@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "API for Tofflemire Freight Services",
+        "description": "API for the ULD Management System",
         "title": "Rest API",
         "contact": {}
     },
@@ -9,7 +9,7 @@
     "paths": {
         "/login": {
             "post": {
-                "description": "Login to the system",
+                "description": "Retrive token for bearer authentication",
                 "consumes": [
                     "application/json"
                 ],
@@ -19,7 +19,7 @@
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Login",
+                "summary": "Retrive token for bearer authentication",
                 "parameters": [
                     {
                         "description": "Login Request",
@@ -53,7 +53,7 @@
                 }
             }
         },
-        "/register": {
+        "/user": {
             "post": {
                 "description": "Create a new user",
                 "consumes": [
@@ -63,18 +63,61 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "User"
                 ],
                 "summary": "Create User",
                 "parameters": [
                     {
-                        "description": "Login Request",
+                        "description": "Create User Request",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.LoginRequest"
+                            "$ref": "#/definitions/handlers.CreateUserRequest"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User",
+                        "schema": {
+                            "$ref": "#/definitions/data.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get a user by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get User by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -107,21 +150,6 @@
                 "id": {
                     "type": "string"
                 },
-                "is_admin": {
-                    "type": "boolean"
-                },
-                "is_deleted": {
-                    "type": "boolean"
-                },
-                "is_verified": {
-                    "type": "boolean"
-                },
-                "last_request": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -138,6 +166,17 @@
                 },
                 "status": {
                     "type": "integer"
+                }
+            }
+        },
+        "handlers.CreateUserRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
                 }
             }
         },
@@ -162,7 +201,7 @@
         }
     },
     "securityDefinitions": {
-        "ApiKeyAuth": {
+        "Bearer Authentication": {
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"

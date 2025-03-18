@@ -1,6 +1,6 @@
-# PMC Management System
+# ULD Management System
 
-The PMC (ULD) Management System is a robust platform for managing Unit Load Devices (ULDs) across airlines, carriers, and warehouses. The backend is built in Go while the mobile client is developed using React Native.
+The ULD Management System is a robust platform for managing Unit Load Devices (ULDs) across airlines, carriers, and warehouses. The backend is built in Go while the mobile client is developed using React Native.
 
 ## Getting Started
 
@@ -34,6 +34,7 @@ make native
 ## Documentation
 
 - **API Docs:** Once the backend server is running, the API documentation is available at the `/docs` endpoint (e.g., [http://localhost:3000/docs](http://localhost:3000/docs)).
+
 - **Frontend Documentation:** Details for the React Native client can be found within the `/native` directory.
 
 ## Project Structure

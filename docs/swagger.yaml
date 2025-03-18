@@ -8,16 +8,6 @@ definitions:
         type: string
       id:
         type: string
-      is_admin:
-        type: boolean
-      is_deleted:
-        type: boolean
-      is_verified:
-        type: boolean
-      last_request:
-        type: string
-      password:
-        type: string
       updated_at:
         type: string
       user_name:
@@ -29,6 +19,13 @@ definitions:
         type: string
       status:
         type: integer
+    type: object
+  handlers.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
     type: object
   handlers.LoginRequest:
     properties:
@@ -44,14 +41,14 @@ definitions:
     type: object
 info:
   contact: {}
-  description: API for Tofflemire Freight Services
+  description: API for the ULD Management System
   title: Rest API
 paths:
   /login:
     post:
       consumes:
       - application/json
-      description: Login to the system
+      description: Retrive token for bearer authentication
       parameters:
       - description: Login Request
         in: body
@@ -74,21 +71,21 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/handlers.ApiError'
-      summary: Login
+      summary: Retrive token for bearer authentication
       tags:
       - Auth
-  /register:
+  /user:
     post:
       consumes:
       - application/json
       description: Create a new user
       parameters:
-      - description: Login Request
+      - description: Create User Request
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.LoginRequest'
+          $ref: '#/definitions/handlers.CreateUserRequest'
       produces:
       - application/json
       responses:
@@ -102,9 +99,36 @@ paths:
             $ref: '#/definitions/handlers.ApiError'
       summary: Create User
       tags:
-      - Auth
+      - User
+  /user/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User
+          schema:
+            $ref: '#/definitions/data.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ApiError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get User by ID
+      tags:
+      - User
 securityDefinitions:
-  ApiKeyAuth:
+  Bearer Authentication:
     in: header
     name: Authorization
     type: apiKey
