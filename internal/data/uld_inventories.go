@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kevin-griley/api/db"
+	"github.com/kevin-griley/api/internal/db"
 )
 
 type UldInventory struct {

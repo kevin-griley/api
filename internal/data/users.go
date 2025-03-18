@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kevin-griley/api/db"
+	"github.com/kevin-griley/api/internal/db"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -49,6 +49,50 @@ func CreateUser(u *User) (uuid.UUID, error) {
 	return u.ID, nil
 }
 
+func UpdateUser(u *User) error {
+	u.UpdatedAt = time.Now().UTC()
+
+	const query = `
+		UPDATE users SET 
+			updated_at = $1,
+			user_name = $2,
+			email = $3,
+			is_admin = $4,
+			is_verified = $5,
+			is_deleted = $6,
+			last_request = $7,
+			last_login = $8,
+			failed_login_attempts = $9
+		WHERE id = $10
+	`
+	result, err := db.Psql.Exec(
+		query,
+		u.UpdatedAt,
+		u.UserName,
+		u.Email,
+		u.IsAdmin,
+		u.IsVerified,
+		u.IsDeleted,
+		u.LastRequest,
+		u.LastLogin,
+		u.FailedLoginAttempts,
+		u.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve update result: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no user found with id: %s", u.ID)
+	}
+
+	return nil
+}
+
 func GetUserByEmail(email string) (*User, error) {
 	rows, err := db.Psql.Query(`SELECT * FROM users WHERE email = $1`, email)
 	if err != nil {
@@ -60,13 +104,8 @@ func GetUserByEmail(email string) (*User, error) {
 	return nil, fmt.Errorf("user %s not found", email)
 }
 
-func GetUserByID(ID string) (*User, error) {
-	userId, err := uuid.Parse(ID)
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := db.Psql.Query(`SELECT * FROM users WHERE id = $1`, userId)
+func GetUserByID(ID uuid.UUID) (*User, error) {
+	rows, err := db.Psql.Query(`SELECT * FROM users WHERE id = $1`, ID)
 	if err != nil {
 		return nil, err
 	}

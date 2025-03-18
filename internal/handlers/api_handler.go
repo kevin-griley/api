@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
+
+	"github.com/kevin-griley/api/internal/types"
 )
 
 type ApiError struct {
@@ -26,7 +29,7 @@ func HTTPErrorHandler(err error, w http.ResponseWriter) {
 	WriteJSON(w, apiErr.Status, apiErr)
 }
 
-func WriteJSON(w http.ResponseWriter, status int, v interface{}) *ApiError {
+func WriteJSON(w http.ResponseWriter, status int, v any) *ApiError {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
 	err := json.NewEncoder(w).Encode(v)
@@ -34,4 +37,20 @@ func WriteJSON(w http.ResponseWriter, status int, v interface{}) *ApiError {
 		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
 	return nil
+}
+
+type ApiFunc func(w http.ResponseWriter, r *http.Request) *ApiError
+
+func HandleApiError(f ApiFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := f(w, r); err != nil {
+			reqID, _ := r.Context().Value(types.ContextKeyRequestID).(string)
+			slog.Error("API Error",
+				"status", err.Status,
+				"error", err.Message,
+				"requestID", reqID,
+			)
+			WriteJSON(w, err.Status, err)
+		}
+	}
 }

@@ -8,7 +8,7 @@ test:
 	@go test -v ./...
 
 swag:
-	@swag init -g ./api/main.go -d cmd,handlers,data
+	@swag init -g ./api/main.go -d cmd,internal
 
 up: 
 	@godotenv -f .env goose up

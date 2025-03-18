@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/kevin-griley/api/data"
+	"github.com/kevin-griley/api/internal/data"
 )
 
 type LoginRequest struct {
@@ -41,8 +41,26 @@ func HandlePostLogin(w http.ResponseWriter, r *http.Request) *ApiError {
 		return &ApiError{http.StatusUnauthorized, "invalid user or password"}
 	}
 
-	if !user.ValidPassword(rBody.Password) {
+	if user.IsDeleted {
 		return &ApiError{http.StatusUnauthorized, "invalid user or password"}
+	}
+
+	if user.FailedLoginAttempts >= 5 && time.Since(user.UpdatedAt).Minutes() < 5 {
+		return &ApiError{http.StatusUnauthorized, "account locked due to too many failed login attempts please try again later"}
+	}
+
+	if !user.ValidPassword(rBody.Password) {
+		user.FailedLoginAttempts++
+		if err := data.UpdateUser(user); err != nil {
+			return &ApiError{http.StatusInternalServerError, err.Error()}
+		}
+		return &ApiError{http.StatusUnauthorized, "invalid user or password"}
+	}
+
+	user.FailedLoginAttempts = 0
+	user.LastLogin = time.Now().UTC()
+	if err := data.UpdateUser(user); err != nil {
+		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
 
 	tokenString, err := CreateJWT(user)
@@ -54,7 +72,6 @@ func HandlePostLogin(w http.ResponseWriter, r *http.Request) *ApiError {
 }
 
 func CreateJWT(user *data.User) (string, error) {
-
 	claims := &jwt.RegisteredClaims{
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),

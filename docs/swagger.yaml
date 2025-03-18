@@ -100,11 +100,11 @@ paths:
       summary: Create User
       tags:
       - User
-  /user/{id}:
+  /user/me:
     get:
       consumes:
       - application/json
-      description: Get a user by ID
+      description: Get a user by apiKey
       parameters:
       - description: User ID
         in: path
@@ -124,11 +124,12 @@ paths:
             $ref: '#/definitions/handlers.ApiError'
       security:
       - ApiKeyAuth: []
-      summary: Get User by ID
+      summary: Get User by apiKey
       tags:
       - User
 securityDefinitions:
   Bearer Authentication:
+    description: Please provide a valid JWT token with Bearer prefix
     in: header
     name: Authorization
     type: apiKey

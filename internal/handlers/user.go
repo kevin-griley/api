@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/kevin-griley/api/data"
+	"github.com/google/uuid"
+	"github.com/kevin-griley/api/internal/data"
+	"github.com/kevin-griley/api/internal/types"
 )
 
 type CreateUserRequest struct {
@@ -42,8 +44,8 @@ func HandlePostUser(w http.ResponseWriter, r *http.Request) *ApiError {
 
 }
 
-// @Summary			Get User by ID
-// @Description		Get a user by ID
+// @Summary			Get User by apiKey
+// @Description		Get a user by apiKey
 // @Tags			User
 // @Security 		ApiKeyAuth
 // @Accept			json
@@ -51,14 +53,14 @@ func HandlePostUser(w http.ResponseWriter, r *http.Request) *ApiError {
 // @Param			id		path	string	true	"User ID"
 // @Success         200		{object}	data.User	"User"
 // @Failure         400		{object} 	ApiError	"Bad Request"
-// @Router			/user/{id}	[get]
-func HandleGetUser(w http.ResponseWriter, r *http.Request) *ApiError {
-	id, err := GetID(r)
-	if err != nil {
-		return &ApiError{http.StatusBadRequest, err.Error()}
+// @Router			/user/me	[get]
+func HandleGetUserByKey(w http.ResponseWriter, r *http.Request) *ApiError {
+	userID, ok := r.Context().Value(types.ContextKeyUserID).(uuid.UUID)
+	if !ok {
+		return &ApiError{http.StatusBadRequest, "Invalid user id"}
 	}
 
-	user, err := data.GetUserByID(id)
+	user, err := data.GetUserByID(userID)
 	if err != nil {
 		return &ApiError{http.StatusNotFound, err.Error()}
 	}

@@ -101,14 +101,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/{id}": {
+        "/user/me": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a user by ID",
+                "description": "Get a user by apiKey",
                 "consumes": [
                     "application/json"
                 ],
@@ -118,7 +118,7 @@ const docTemplate = `{
                 "tags": [
                     "User"
                 ],
-                "summary": "Get User by ID",
+                "summary": "Get User by apiKey",
                 "parameters": [
                     {
                         "type": "string",
@@ -210,6 +210,7 @@ const docTemplate = `{
     },
     "securityDefinitions": {
         "Bearer Authentication": {
+            "description": "Please provide a valid JWT token with Bearer prefix",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
