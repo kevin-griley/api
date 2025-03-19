@@ -12,10 +12,10 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-
-	"github.com/kevin-griley/api/internal/handlers"
-	"github.com/kevin-griley/api/internal/types"
 )
+
+const ContextKeyUserID ContextKey = "ContextKeyUserID"
+const ContextKeyClaims ContextKey = "ContextKeyClaims"
 
 func ExtractBearerToken(authHeader string) (string, error) {
 	const prefix = "Bearer "
@@ -27,6 +27,9 @@ func ExtractBearerToken(authHeader string) (string, error) {
 
 func JwtAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		ctx := r.Context()
+
 		authHeader := r.Header.Get("Authorization")
 		tokenStr, err := ExtractBearerToken(authHeader)
 		if err != nil {
@@ -62,8 +65,9 @@ func JwtAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), types.ContextKeyUserID, userID)
-		ctx = context.WithValue(ctx, types.ContextKeyClaims, claims)
+		ctx = withUserID(ctx, userID)
+		ctx = withClaims(ctx, claims)
+
 		next(w, r.WithContext(ctx))
 
 	}
@@ -79,9 +83,31 @@ func ValidateJWT(tokenStr string) (*jwt.Token, error) {
 	})
 }
 
+type ApiError struct {
+	Status  int    `json:"status"`
+	Message string `json:"error"`
+}
+
 func PermissionDenied(w http.ResponseWriter) {
-	handlers.WriteJSON(w, http.StatusUnauthorized, handlers.ApiError{
-		Status:  http.StatusUnauthorized,
-		Message: "Permission Denied",
-	})
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusForbidden)
+	w.Write([]byte(`{"status":403,"error":"Permission Denied"}`))
+}
+
+func GetUserID(ctx context.Context) (uuid.UUID, bool) {
+	userID, ok := ctx.Value(ContextKeyUserID).(uuid.UUID)
+	return userID, ok
+}
+
+func withUserID(ctx context.Context, userID uuid.UUID) context.Context {
+	return context.WithValue(ctx, ContextKeyUserID, userID)
+}
+
+func GetClaims(ctx context.Context) (jwt.MapClaims, bool) {
+	claims, ok := ctx.Value(ContextKeyClaims).(jwt.MapClaims)
+	return claims, ok
+}
+
+func withClaims(ctx context.Context, claims jwt.MapClaims) context.Context {
+	return context.WithValue(ctx, ContextKeyClaims, claims)
 }

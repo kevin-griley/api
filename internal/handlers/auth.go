@@ -30,13 +30,13 @@ type TokenResponse struct {
 // @Failure			401		{object} 	ApiError	"Unauthorized"
 // @Router			/login	[post]
 func HandlePostLogin(w http.ResponseWriter, r *http.Request) *ApiError {
-
+	ctx := r.Context()
 	rBody := new(LoginRequest)
 	if err := json.NewDecoder(r.Body).Decode(rBody); err != nil {
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
-	user, err := data.GetUserByEmail(rBody.Email)
+	user, err := data.GetUserByEmail(ctx, rBody.Email)
 	if err != nil {
 		return &ApiError{http.StatusUnauthorized, "invalid user or password"}
 	}
@@ -45,13 +45,13 @@ func HandlePostLogin(w http.ResponseWriter, r *http.Request) *ApiError {
 		return &ApiError{http.StatusUnauthorized, "invalid user or password"}
 	}
 
-	if user.FailedLoginAttempts >= 5 && time.Since(user.UpdatedAt).Minutes() < 5 {
+	if user.FailedLoginAttempts >= 10 && time.Since(user.UpdatedAt).Minutes() < 30 {
 		return &ApiError{http.StatusUnauthorized, "account locked due to too many failed login attempts please try again later"}
 	}
 
 	if !user.ValidPassword(rBody.Password) {
 		user.FailedLoginAttempts++
-		if err := data.UpdateUser(user); err != nil {
+		if err := data.UpdateUser(ctx, user); err != nil {
 			return &ApiError{http.StatusInternalServerError, err.Error()}
 		}
 		return &ApiError{http.StatusUnauthorized, "invalid user or password"}
@@ -59,7 +59,7 @@ func HandlePostLogin(w http.ResponseWriter, r *http.Request) *ApiError {
 
 	user.FailedLoginAttempts = 0
 	user.LastLogin = time.Now().UTC()
-	if err := data.UpdateUser(user); err != nil {
+	if err := data.UpdateUser(ctx, user); err != nil {
 		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
 

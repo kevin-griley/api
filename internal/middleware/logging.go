@@ -2,13 +2,12 @@ package middleware
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/kevin-griley/api/internal/types"
 )
+
+var contextKeyRequestID ContextKey = "contextKeyRequestID"
 
 func GenerateRequestID() string {
 	return uuid.New().String()
@@ -16,33 +15,22 @@ func GenerateRequestID() string {
 
 func LoggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Generate or retrieve a requestID in context.
-		reqID, ok := r.Context().Value(types.ContextKeyRequestID).(string)
+		ctx := r.Context()
+		reqID, ok := GetRequestID(ctx)
 		if !ok || reqID == "" {
 			reqID = GenerateRequestID()
-			ctx := context.WithValue(r.Context(), types.ContextKeyRequestID, reqID)
+			ctx := withRequestID(ctx, reqID)
 			r = r.WithContext(ctx)
 		}
-
-		// Retrieve remote IP (r.RemoteAddr isn't perfect, check X-Forwarded-For if behind a proxy)
-		remoteIP := r.RemoteAddr
-
-		start := time.Now()
-		slog.Info("Request started",
-			"method", r.Method,
-			"path", r.URL.Path,
-			"requestID", reqID,
-			"remoteIP", remoteIP,
-		)
-
 		next(w, r)
-
-		duration := time.Since(start)
-		slog.Info("Request completed",
-			"method", r.Method,
-			"path", r.URL.Path,
-			"duration", duration,
-			"requestID", reqID,
-		)
 	}
+}
+
+func withRequestID(ctx context.Context, reqID string) context.Context {
+	return context.WithValue(ctx, contextKeyRequestID, reqID)
+}
+
+func GetRequestID(ctx context.Context) (string, bool) {
+	reqID, ok := ctx.Value(contextKeyRequestID).(string)
+	return reqID, ok
 }

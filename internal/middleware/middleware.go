@@ -10,3 +10,5 @@ func Chain(final http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 	}
 	return final
 }
+
+type ContextKey string

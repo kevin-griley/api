@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/kevin-griley/api/internal/types"
+	"github.com/kevin-griley/api/internal/middleware"
 )
 
 type ApiError struct {
@@ -44,7 +44,12 @@ type ApiFunc func(w http.ResponseWriter, r *http.Request) *ApiError
 func HandleApiError(f ApiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := f(w, r); err != nil {
-			reqID, _ := r.Context().Value(types.ContextKeyRequestID).(string)
+
+			reqID, ok := middleware.GetRequestID(r.Context())
+			if !ok {
+				reqID = "unknown"
+			}
+
 			slog.Error("API Error",
 				"status", err.Status,
 				"error", err.Message,

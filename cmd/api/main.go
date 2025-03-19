@@ -1,10 +1,13 @@
 package main
 
 import (
+	"log"
 	"log/slog"
 	"net/http"
 
+	"github.com/joho/godotenv"
 	"github.com/kevin-griley/api/docs"
+
 	"github.com/kevin-griley/api/internal/db"
 	"github.com/kevin-griley/api/internal/handlers"
 	"github.com/kevin-griley/api/internal/middleware"
@@ -21,34 +24,57 @@ import (
 // @name						Authorization
 // @description					Please provide a valid JWT token with Bearer prefix
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Failed to load embedded .env file:", err)
+	}
+
+	dbConn, err := db.Init()
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+	defer db.Close(dbConn)
 
 	listenAddress := ":3000"
 	docs.SwaggerInfo.Host = "localhost:3000"
 
-	if err := db.Init(); err != nil {
-		slog.Error("Application", "Database Init", err)
-	}
-
 	mux := http.NewServeMux()
-
-	// Serve the Swagger API documentation
+	//////////////////////////
+	// SWAGGER - Docs route
+	//////////////////////////
 	mux.HandleFunc("GET /docs/", httpSwagger.WrapHandler)
-
-	// Auth routes
-	mux.HandleFunc("POST /login", handlers.HandleApiError(handlers.HandlePostLogin))
-
-	// User routes
-	getUserByKeyHandler := handlers.HandleApiError(handlers.HandleGetUserByKey)
-	getUserById := middleware.Chain(
-		getUserByKeyHandler,
-		middleware.JwtAuthMiddleware,
+	//////////////////////////
+	// AUTH - Login route
+	//////////////////////////
+	PostLoginHandler := handlers.HandleApiError(handlers.HandlePostLogin)
+	PostLogin := middleware.Chain(
+		PostLoginHandler,
+		middleware.DBMiddleware(dbConn),
 	)
-
-	mux.HandleFunc("GET /user/me", getUserById)
-	mux.HandleFunc("POST /user", handlers.HandleApiError(handlers.HandlePostUser))
+	mux.HandleFunc("POST /login", PostLogin)
+	//////////////////////////
+	// USER - Get Current User Route
+	//////////////////////////
+	GetUserByKeyHandler := handlers.HandleApiError(handlers.HandleGetUserByKey)
+	GetUserByKey := middleware.Chain(
+		GetUserByKeyHandler,
+		middleware.JwtAuthMiddleware,
+		middleware.DBMiddleware(dbConn),
+	)
+	mux.HandleFunc("GET /user/me", GetUserByKey)
+	//////////////////////////
+	// USER - Create New User Route
+	//////////////////////////
+	PostUserHandler := handlers.HandleApiError(handlers.HandlePostUser)
+	PostUser := middleware.Chain(
+		PostUserHandler,
+		middleware.DBMiddleware(dbConn),
+	)
+	mux.HandleFunc("POST /user", PostUser)
 
 	slog.Info("Application", "Swagger Docs Url", "http://localhost:3000/docs")
 
-	finalHandler := middleware.LoggingMiddleware(mux.ServeHTTP)
-	http.ListenAndServe(listenAddress, finalHandler)
+	loggingHandler := middleware.LoggingMiddleware(mux.ServeHTTP)
+
+	http.ListenAndServe(listenAddress, loggingHandler)
 }

@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -25,13 +26,19 @@ type User struct {
 	FailedLoginAttempts int       `json:"-"`
 }
 
-func CreateUser(u *User) (uuid.UUID, error) {
+func CreateUser(ctx context.Context, u *User) (uuid.UUID, error) {
+	dbConn, ok := db.GetDB(ctx)
+	if !ok {
+		return u.ID, fmt.Errorf("failed to get db connection")
+	}
+
 	query := `
 		INSERT INTO users (id, created_at, updated_at, user_name, email, hashed_password, last_request, last_login)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id
 	`
-	err := db.Psql.QueryRow(
+
+	if err := dbConn.QueryRow(
 		query,
 		u.ID,
 		u.CreatedAt,
@@ -41,15 +48,19 @@ func CreateUser(u *User) (uuid.UUID, error) {
 		u.HashedPassword,
 		u.LastRequest,
 		u.LastLogin,
-	).Scan(&u.ID)
-	if err != nil {
-		return u.ID, fmt.Errorf("user %s already exists", u.Email)
+	).Scan(&u.ID); err != nil {
+		return u.ID, fmt.Errorf("failed to insert user: %w", err)
 	}
 
 	return u.ID, nil
 }
 
-func UpdateUser(u *User) error {
+func UpdateUser(ctx context.Context, u *User) error {
+	dbConn, ok := db.GetDB(ctx)
+	if !ok {
+		return fmt.Errorf("failed to get db connection")
+	}
+
 	u.UpdatedAt = time.Now().UTC()
 
 	const query = `
@@ -65,7 +76,7 @@ func UpdateUser(u *User) error {
 			failed_login_attempts = $9
 		WHERE id = $10
 	`
-	result, err := db.Psql.Exec(
+	result, err := dbConn.Exec(
 		query,
 		u.UpdatedAt,
 		u.UserName,
@@ -93,24 +104,34 @@ func UpdateUser(u *User) error {
 	return nil
 }
 
-func GetUserByEmail(email string) (*User, error) {
-	rows, err := db.Psql.Query(`SELECT * FROM users WHERE email = $1`, email)
+func GetUserByEmail(ctx context.Context, email string) (*User, error) {
+	dbConn, ok := db.GetDB(ctx)
+	if !ok {
+		return nil, fmt.Errorf("failed to get db connection")
+	}
+
+	rows, err := dbConn.Query(`SELECT * FROM users WHERE email = $1`, email)
 	if err != nil {
 		return nil, err
 	}
 	if rows.Next() {
-		return scanIntoUser(rows)
+		return ScanIntoUser(rows)
 	}
 	return nil, fmt.Errorf("user %s not found", email)
 }
 
-func GetUserByID(ID uuid.UUID) (*User, error) {
-	rows, err := db.Psql.Query(`SELECT * FROM users WHERE id = $1`, ID)
+func GetUserByID(ctx context.Context, ID uuid.UUID) (*User, error) {
+	dbConn, ok := db.GetDB(ctx)
+	if !ok {
+		return nil, fmt.Errorf("failed to get db connection")
+	}
+
+	rows, err := dbConn.Query(`SELECT * FROM users WHERE id = $1`, ID)
 	if err != nil {
 		return nil, err
 	}
 	if rows.Next() {
-		return scanIntoUser(rows)
+		return ScanIntoUser(rows)
 	}
 	return nil, fmt.Errorf("user %s not found", ID)
 }
@@ -143,7 +164,7 @@ func (usr *User) ValidPassword(password string) bool {
 		[]byte(password)) == nil
 }
 
-func scanIntoUser(rows *sql.Rows) (*User, error) {
+func ScanIntoUser(rows *sql.Rows) (*User, error) {
 	u := new(User)
 	err := rows.Scan(
 		&u.ID,

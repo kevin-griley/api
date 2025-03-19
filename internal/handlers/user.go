@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/kevin-griley/api/internal/data"
-	"github.com/kevin-griley/api/internal/types"
+	"github.com/kevin-griley/api/internal/middleware"
 )
 
 type CreateUserRequest struct {
@@ -24,6 +23,8 @@ type CreateUserRequest struct {
 // @Failure         400		{object} 	ApiError	"Bad Request"
 // @Router			/user	[post]
 func HandlePostUser(w http.ResponseWriter, r *http.Request) *ApiError {
+	ctx := r.Context()
+
 	registerReq := new(CreateUserRequest)
 	if err := json.NewDecoder(r.Body).Decode(registerReq); err != nil {
 		return &ApiError{http.StatusBadRequest, err.Error()}
@@ -34,7 +35,7 @@ func HandlePostUser(w http.ResponseWriter, r *http.Request) *ApiError {
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
-	userID, err := data.CreateUser(user)
+	userID, err := data.CreateUser(ctx, user)
 	if err != nil {
 		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
@@ -55,12 +56,14 @@ func HandlePostUser(w http.ResponseWriter, r *http.Request) *ApiError {
 // @Failure         400		{object} 	ApiError	"Bad Request"
 // @Router			/user/me	[get]
 func HandleGetUserByKey(w http.ResponseWriter, r *http.Request) *ApiError {
-	userID, ok := r.Context().Value(types.ContextKeyUserID).(uuid.UUID)
+	ctx := r.Context()
+
+	userID, ok := middleware.GetUserID(ctx)
 	if !ok {
 		return &ApiError{http.StatusBadRequest, "Invalid user id"}
 	}
 
-	user, err := data.GetUserByID(userID)
+	user, err := data.GetUserByID(ctx, userID)
 	if err != nil {
 		return &ApiError{http.StatusNotFound, err.Error()}
 	}

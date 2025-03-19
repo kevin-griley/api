@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetID(r *http.Request) (uuid.UUID, error) {
+func GetPathID(r *http.Request) (uuid.UUID, error) {
 	idStr := r.PathValue("id")
 	if idStr == "" {
 		return uuid.Nil, fmt.Errorf("id is required")
