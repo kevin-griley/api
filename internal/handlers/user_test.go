@@ -13,7 +13,6 @@ import (
 )
 
 func TestUsers(t *testing.T) {
-
 	number := rand.Int()
 	newUserName := fmt.Sprintf("Kevin Griley %d", number)
 
@@ -24,7 +23,6 @@ func TestUsers(t *testing.T) {
 		updatePayload  PatchUserRequest
 		expectedStatus int
 	}{
-
 		{
 			name:   "Valid Update",
 			method: http.MethodPatch,
@@ -35,7 +33,6 @@ func TestUsers(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 		},
-
 		{
 			name:           "Get User",
 			method:         http.MethodGet,
@@ -45,7 +42,6 @@ func TestUsers(t *testing.T) {
 	}
 
 	finalHandler, token, err := BaseLine(HandlePatchUser)
-
 	if err != nil {
 		t.Fatalf("Failed to create baseline: %v", err)
 	}

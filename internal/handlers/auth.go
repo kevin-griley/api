@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -38,18 +37,17 @@ func HandlePostLogin(w http.ResponseWriter, r *http.Request) *ApiError {
 		return &ApiError{http.StatusInternalServerError, "no database store in context"}
 	}
 
-	rBody := new(PostAuthRequest)
-	if err := json.NewDecoder(r.Body).Decode(rBody); err != nil {
+	postReq := new(PostAuthRequest)
+	if err := DecodeJSONRequest(r, postReq, 1<<20); err != nil {
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
-	if rBody.Email == "" || rBody.Password == "" {
+	if postReq.Email == "" || postReq.Password == "" {
 		return &ApiError{http.StatusBadRequest, "email and password are required"}
 	}
 
-	user, err := store.User.GetUserByEmail(rBody.Email)
+	user, err := store.User.GetUserByEmail(postReq.Email)
 	if err != nil {
-
 		return &ApiError{http.StatusUnauthorized, "invalid user or password"}
 	}
 
@@ -61,7 +59,7 @@ func HandlePostLogin(w http.ResponseWriter, r *http.Request) *ApiError {
 		return &ApiError{http.StatusUnauthorized, "account locked due to too many failed login attempts please try again later"}
 	}
 
-	if !user.ValidPassword(rBody.Password) {
+	if !user.ValidPassword(postReq.Password) {
 		user.FailedLoginAttempts++
 		_, err := store.User.UpdateUser(user)
 		if err != nil {

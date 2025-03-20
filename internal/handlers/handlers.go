@@ -3,8 +3,10 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/kevin-griley/api/internal/middleware"
@@ -74,4 +76,32 @@ func HandleApiError(f ApiFunc) http.HandlerFunc {
 			WriteJSON(w, err.Status, err)
 		}
 	}
+}
+
+func DecodeJSONRequest(r *http.Request, dest any, maxSize int64) error {
+	if maxSize <= 0 {
+		maxSize = 1 << 20 // Default to 1MB if not specified
+	}
+
+	if !strings.Contains(r.Header.Get("Content-Type"), "application/json") {
+		return fmt.Errorf("invalid content type: expected application/json")
+	}
+
+	body := http.MaxBytesReader(nil, r.Body, maxSize)
+	defer r.Body.Close()
+
+	decoder := json.NewDecoder(body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(dest); err != nil {
+		if err == io.EOF {
+			return fmt.Errorf("empty request body")
+		}
+		return fmt.Errorf("invalid JSON: %v", err)
+	}
+
+	if decoder.More() {
+		return fmt.Errorf("unexpected extra JSON content")
+	}
+
+	return nil
 }

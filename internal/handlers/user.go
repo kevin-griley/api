@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/kevin-griley/api/internal/data"
@@ -30,12 +29,12 @@ func HandlePostUser(w http.ResponseWriter, r *http.Request) *ApiError {
 		return &ApiError{http.StatusInternalServerError, "no database store in context"}
 	}
 
-	registerReq := new(PostUserRequest)
-	if err := json.NewDecoder(r.Body).Decode(registerReq); err != nil {
+	postReq := new(PostUserRequest)
+	if err := DecodeJSONRequest(r, postReq, 1<<20); err != nil {
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
-	user, err := store.User.CreateRequest(registerReq.Email, registerReq.Password)
+	user, err := store.User.CreateRequest(postReq.Email, postReq.Password)
 	if err != nil {
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
@@ -102,7 +101,7 @@ func HandlePatchUser(w http.ResponseWriter, r *http.Request) *ApiError {
 	}
 
 	patchReq := new(PatchUserRequest)
-	if err := json.NewDecoder(r.Body).Decode(patchReq); err != nil {
+	if err := DecodeJSONRequest(r, patchReq, 1<<20); err != nil {
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
