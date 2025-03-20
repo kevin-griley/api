@@ -10,12 +10,12 @@ import (
 	"github.com/kevin-griley/api/internal/data"
 )
 
-type LoginRequest struct {
+type PostAuthRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-type TokenResponse struct {
+type PostAuthResponse struct {
 	Token string `json:"token"`
 }
 
@@ -24,14 +24,14 @@ type TokenResponse struct {
 // @Tags			Auth
 // @Accept			json
 // @Produce			json
-// @Param			body	body		LoginRequest	true	"Login Request"
-// @Success			200		{object}	TokenResponse	"Token Response"
+// @Param			body	body		PostAuthRequest	true	"Login Request"
+// @Success			200		{object}	PostAuthResponse	"Token Response"
 // @Failure			400		{object} 	ApiError	"Bad Request"
 // @Failure			401		{object} 	ApiError	"Unauthorized"
 // @Router			/login	[post]
 func HandlePostLogin(w http.ResponseWriter, r *http.Request) *ApiError {
 	ctx := r.Context()
-	rBody := new(LoginRequest)
+	rBody := new(PostAuthRequest)
 	if err := json.NewDecoder(r.Body).Decode(rBody); err != nil {
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
@@ -51,15 +51,20 @@ func HandlePostLogin(w http.ResponseWriter, r *http.Request) *ApiError {
 
 	if !user.ValidPassword(rBody.Password) {
 		user.FailedLoginAttempts++
-		if err := data.UpdateUser(ctx, user); err != nil {
+
+		_, err := data.UpdateUser(ctx, user)
+		if err != nil {
 			return &ApiError{http.StatusInternalServerError, err.Error()}
 		}
+
 		return &ApiError{http.StatusUnauthorized, "invalid user or password"}
 	}
 
-	user.FailedLoginAttempts = 0
+	user.FailedLoginAttempts = 1
 	user.LastLogin = time.Now().UTC()
-	if err := data.UpdateUser(ctx, user); err != nil {
+	user, err = data.UpdateUser(ctx, user)
+
+	if err != nil {
 		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
 
@@ -68,7 +73,7 @@ func HandlePostLogin(w http.ResponseWriter, r *http.Request) *ApiError {
 		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
 
-	return WriteJSON(w, http.StatusOK, TokenResponse{Token: tokenString})
+	return WriteJSON(w, http.StatusOK, PostAuthResponse{Token: tokenString})
 }
 
 func CreateJWT(user *data.User) (string, error) {

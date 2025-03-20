@@ -16,9 +16,6 @@ up:
 down:
 	@godotenv -f .env goose down
 
-reset: 
-	@godotenv -f .env goose reset
-
 create: 
 	@godotenv -f .env goose create $(name) sql
 

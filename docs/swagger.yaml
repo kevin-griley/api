@@ -20,23 +20,30 @@ definitions:
       status:
         type: integer
     type: object
-  handlers.CreateUserRequest:
+  handlers.PatchUserRequest:
+    properties:
+      password:
+        type: string
+      user_name:
+        type: string
+    type: object
+  handlers.PostAuthRequest:
     properties:
       email:
         type: string
       password:
         type: string
     type: object
-  handlers.LoginRequest:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-    type: object
-  handlers.TokenResponse:
+  handlers.PostAuthResponse:
     properties:
       token:
+        type: string
+    type: object
+  handlers.PostUserRequest:
+    properties:
+      email:
+        type: string
+      password:
         type: string
     type: object
 info:
@@ -55,14 +62,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.LoginRequest'
+          $ref: '#/definitions/handlers.PostAuthRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Token Response
           schema:
-            $ref: '#/definitions/handlers.TokenResponse'
+            $ref: '#/definitions/handlers.PostAuthResponse'
         "400":
           description: Bad Request
           schema:
@@ -85,7 +92,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateUserRequest'
+          $ref: '#/definitions/handlers.PostUserRequest'
       produces:
       - application/json
       responses:
@@ -97,14 +104,14 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/handlers.ApiError'
-      summary: Create User
+      summary: Create a new user
       tags:
       - User
   /user/me:
     get:
       consumes:
       - application/json
-      description: Get a user by apiKey
+      description: Get user by apiKey
       parameters:
       - description: User ID
         in: path
@@ -124,12 +131,39 @@ paths:
             $ref: '#/definitions/handlers.ApiError'
       security:
       - ApiKeyAuth: []
-      summary: Get User by apiKey
+      summary: Get user by apiKey
+      tags:
+      - User
+    patch:
+      consumes:
+      - application/json
+      description: Patch user by apiKey
+      parameters:
+      - description: Patch User Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PatchUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User
+          schema:
+            $ref: '#/definitions/data.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ApiError'
+      security:
+      - ApiKeyAuth: []
+      summary: Patch user by apiKey
       tags:
       - User
 securityDefinitions:
   Bearer Authentication:
-    description: Please provide a valid JWT token with Bearer prefix
+    description: A valid JWT token with Bearer prefix
     in: header
     name: Authorization
     type: apiKey

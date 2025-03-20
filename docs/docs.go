@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.LoginRequest"
+                            "$ref": "#/definitions/handlers.PostAuthRequest"
                         }
                     }
                 ],
@@ -43,7 +43,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Token Response",
                         "schema": {
-                            "$ref": "#/definitions/handlers.TokenResponse"
+                            "$ref": "#/definitions/handlers.PostAuthResponse"
                         }
                     },
                     "400": {
@@ -73,7 +73,7 @@ const docTemplate = `{
                 "tags": [
                     "User"
                 ],
-                "summary": "Create User",
+                "summary": "Create a new user",
                 "parameters": [
                     {
                         "description": "Create User Request",
@@ -81,7 +81,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateUserRequest"
+                            "$ref": "#/definitions/handlers.PostUserRequest"
                         }
                     }
                 ],
@@ -108,7 +108,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a user by apiKey",
+                "description": "Get user by apiKey",
                 "consumes": [
                     "application/json"
                 ],
@@ -118,7 +118,7 @@ const docTemplate = `{
                 "tags": [
                     "User"
                 ],
-                "summary": "Get User by apiKey",
+                "summary": "Get user by apiKey",
                 "parameters": [
                     {
                         "type": "string",
@@ -126,6 +126,49 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User",
+                        "schema": {
+                            "$ref": "#/definitions/data.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ApiError"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Patch user by apiKey",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Patch user by apiKey",
+                "parameters": [
+                    {
+                        "description": "Patch User Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PatchUserRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -177,7 +220,18 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateUserRequest": {
+        "handlers.PatchUserRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.PostAuthRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -188,21 +242,21 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.LoginRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.TokenResponse": {
+        "handlers.PostAuthResponse": {
             "type": "object",
             "properties": {
                 "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.PostUserRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
                     "type": "string"
                 }
             }
@@ -210,7 +264,7 @@ const docTemplate = `{
     },
     "securityDefinitions": {
         "Bearer Authentication": {
-            "description": "Please provide a valid JWT token with Bearer prefix",
+            "description": "A valid JWT token with Bearer prefix",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"

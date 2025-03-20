@@ -22,7 +22,7 @@ import (
 // @tokenUrl http://localhost:3000/login
 // @in							header
 // @name						Authorization
-// @description					Please provide a valid JWT token with Bearer prefix
+// @description					A valid JWT token with Bearer prefix
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -71,6 +71,16 @@ func main() {
 		middleware.DBMiddleware(dbConn),
 	)
 	mux.HandleFunc("POST /user", PostUser)
+	//////////////////////////
+	// USER - Update User Route
+	//////////////////////////
+	PatchUserHandler := handlers.HandleApiError(handlers.HandlePatchUser)
+	PatchUser := middleware.Chain(
+		PatchUserHandler,
+		middleware.JwtAuthMiddleware,
+		middleware.DBMiddleware(dbConn),
+	)
+	mux.HandleFunc("PATCH /user/me", PatchUser)
 
 	slog.Info("Application", "Swagger Docs Url", "http://localhost:3000/docs")
 

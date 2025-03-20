@@ -119,28 +119,28 @@ CREATE TABLE IF NOT EXISTS "user_associations" (
     "id" UUID PRIMARY KEY,
     "created_at" TIMESTAMPTZ NOT NULL,
     "updated_at" TIMESTAMPTZ NOT NULL,
+    "status" "organization_status" NOT NULL,
+    "permissions" "permissions_enum"[],
     "user_id" UUID NOT NULL, -- FK user
     "organization_id" UUID NOT NULL, -- FK organization
-    "permissions" "permissions_enum"[],
-    "status" "organization_status" NOT NULL,
-
+    
     CONSTRAINT "unique_user_org" UNIQUE ("user_id", "organization_id")
 );
 
-ALTER TABLE "uld_inventories" ADD CONSTRAINT "fk_orgaization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "uld_inventories" ADD CONSTRAINT "fk_uld_organization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "delivery_manifests" ADD CONSTRAINT "fk_warehouse" FOREIGN KEY ("warehouse_id") REFERENCES "warehouses"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "delivery_manifests" ADD CONSTRAINT "fk_airline" FOREIGN KEY ("airline_id") REFERENCES "airlines"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "delivery_manifests" ADD CONSTRAINT "fk_carrier" FOREIGN KEY ("carrier_id") REFERENCES "carriers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "delivery_manifests" ADD CONSTRAINT "fk_created_by" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-ALTER TABLE "delivery_manifests" ADD CONSTRAINT "fk_organization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "delivery_manifests" ADD CONSTRAINT "fk_delivery_manifest_organization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "manifest_items" ADD CONSTRAINT "fk_manifest" FOREIGN KEY ("manifest_id") REFERENCES "delivery_manifests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "manifest_items" ADD CONSTRAINT "fk_uld_inventory" FOREIGN KEY ("uld_inventory_id") REFERENCES "uld_inventories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "manifest_items" ADD CONSTRAINT "fk_organization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-ALTER TABLE "warehouses" ADD CONSTRAINT "fk_organization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-ALTER TABLE "airlines" ADD CONSTRAINT "fk_organization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-ALTER TABLE "carriers" ADD CONSTRAINT "fk_organization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "manifest_items" ADD CONSTRAINT "fk_manifest_item_organization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "warehouses" ADD CONSTRAINT "fk_warehouse_organization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "airlines" ADD CONSTRAINT "fk_airline_organization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "carriers" ADD CONSTRAINT "fk_carrier_organization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "user_associations" ADD CONSTRAINT "fk_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "user_associations" ADD CONSTRAINT "fk_organization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_associations" ADD CONSTRAINT "fk_user_association_organization" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- +goose StatementEnd
 
@@ -165,4 +165,5 @@ DROP TYPE IF EXISTS "organization_type_enum";
 DROP TYPE IF EXISTS "uld_status_enum";
 DROP TYPE IF EXISTS "uld_type_enum";
 DROP TYPE IF EXISTS "manifest_status_enum";
+DROP TYPE IF EXISTS "organization_status";
 -- +goose StatementEnd
