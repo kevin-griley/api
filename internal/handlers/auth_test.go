@@ -75,11 +75,9 @@ func TestLogin(t *testing.T) {
 			}
 
 			req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(reqBody))
-
 			req.Header.Set("Content-Type", "application/json")
 
 			rr := httptest.NewRecorder()
-
 			finalHandler.ServeHTTP(rr, req)
 
 			if rr.Code != tc.expectedStatus {
