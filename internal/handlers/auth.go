@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -31,13 +32,24 @@ type PostAuthResponse struct {
 // @Router			/login	[post]
 func HandlePostLogin(w http.ResponseWriter, r *http.Request) *ApiError {
 	ctx := r.Context()
+
+	store, ok := data.GetStore(ctx)
+	if !ok {
+		return &ApiError{http.StatusInternalServerError, "no database store in context"}
+	}
+
 	rBody := new(PostAuthRequest)
 	if err := json.NewDecoder(r.Body).Decode(rBody); err != nil {
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
-	user, err := data.GetUserByEmail(ctx, rBody.Email)
+	if rBody.Email == "" || rBody.Password == "" {
+		return &ApiError{http.StatusBadRequest, "email and password are required"}
+	}
+
+	user, err := store.User.GetUserByEmail(rBody.Email)
 	if err != nil {
+
 		return &ApiError{http.StatusUnauthorized, "invalid user or password"}
 	}
 
@@ -51,18 +63,17 @@ func HandlePostLogin(w http.ResponseWriter, r *http.Request) *ApiError {
 
 	if !user.ValidPassword(rBody.Password) {
 		user.FailedLoginAttempts++
-
-		_, err := data.UpdateUser(ctx, user)
+		_, err := store.User.UpdateUser(user)
 		if err != nil {
+			log.Printf("failed to update user: %v", err)
 			return &ApiError{http.StatusInternalServerError, err.Error()}
 		}
-
 		return &ApiError{http.StatusUnauthorized, "invalid user or password"}
 	}
 
 	user.FailedLoginAttempts = 1
 	user.LastLogin = time.Now().UTC()
-	user, err = data.UpdateUser(ctx, user)
+	user, err = store.User.UpdateUser(user)
 
 	if err != nil {
 		return &ApiError{http.StatusInternalServerError, err.Error()}

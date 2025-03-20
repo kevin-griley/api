@@ -1,36 +1,15 @@
 package data
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kevin-griley/api/internal/db"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type User struct {
-	ID                  uuid.UUID `json:"id"`
-	CreatedAt           time.Time `json:"created_at"`
-	UpdatedAt           time.Time `json:"updated_at"`
-	UserName            string    `json:"user_name"`
-	Email               string    `json:"email"`
-	HashedPassword      string    `json:"-"`
-	IsAdmin             bool      `json:"-"`
-	IsVerified          bool      `json:"-"`
-	IsDeleted           bool      `json:"-"`
-	LastRequest         time.Time `json:"-"`
-	LastLogin           time.Time `json:"-"`
-	FailedLoginAttempts int       `json:"-"`
-}
-
-func CreateUser(ctx context.Context, u *User) (*User, error) {
-	dbConn, ok := db.GetDB(ctx)
-	if !ok {
-		return nil, fmt.Errorf("failed to get db connection")
-	}
+func (s *userStoreImpl) CreateUser(u *User) (*User, error) {
 
 	data := map[string]any{
 		"id":              u.ID,
@@ -48,24 +27,20 @@ func CreateUser(ctx context.Context, u *User) (*User, error) {
 		return nil, err
 	}
 
-	rows, err := dbConn.Query(query, values...)
+	rows, err := s.db.Query(query, values...)
 	if err != nil {
 		return nil, err
 	}
 
 	if rows.Next() {
-		return ScanIntoUser(rows)
+		return scanIntoUser(rows)
 	}
 
 	return nil, fmt.Errorf("failed to create user")
 
 }
 
-func GetUserByEmail(ctx context.Context, email string) (*User, error) {
-	dbConn, ok := db.GetDB(ctx)
-	if !ok {
-		return nil, fmt.Errorf("failed to get db connection")
-	}
+func (s *userStoreImpl) GetUserByEmail(email string) (*User, error) {
 
 	data := map[string]any{
 		"email": email,
@@ -76,21 +51,17 @@ func GetUserByEmail(ctx context.Context, email string) (*User, error) {
 		return nil, err
 	}
 
-	rows, err := dbConn.Query(query, values...)
+	rows, err := s.db.Query(query, values...)
 	if err != nil {
 		return nil, err
 	}
 	if rows.Next() {
-		return ScanIntoUser(rows)
+		return scanIntoUser(rows)
 	}
 	return nil, fmt.Errorf("user %s not found", email)
 }
 
-func GetUserByID(ctx context.Context, ID uuid.UUID) (*User, error) {
-	dbConn, ok := db.GetDB(ctx)
-	if !ok {
-		return nil, fmt.Errorf("failed to get db connection")
-	}
+func (s *userStoreImpl) GetUserByID(ID uuid.UUID) (*User, error) {
 
 	data := map[string]any{
 		"id": ID,
@@ -101,22 +72,17 @@ func GetUserByID(ctx context.Context, ID uuid.UUID) (*User, error) {
 		return nil, err
 	}
 
-	rows, err := dbConn.Query(query, values...)
+	rows, err := s.db.Query(query, values...)
 	if err != nil {
 		return nil, err
 	}
 	if rows.Next() {
-		return ScanIntoUser(rows)
+		return scanIntoUser(rows)
 	}
 	return nil, fmt.Errorf("user %s not found", ID)
 }
 
-func UpdateUser(ctx context.Context, u *User) (*User, error) {
-
-	dbConn, ok := db.GetDB(ctx)
-	if !ok {
-		return nil, fmt.Errorf("failed to get db connection")
-	}
+func (s *userStoreImpl) UpdateUser(u *User) (*User, error) {
 
 	updateData := make(map[string]any)
 	updateData["updated_at"] = u.UpdatedAt
@@ -158,20 +124,20 @@ func UpdateUser(ctx context.Context, u *User) (*User, error) {
 		return nil, err
 	}
 
-	rows, err := dbConn.Query(query, args...)
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	if rows.Next() {
-		return ScanIntoUser(rows)
+		return scanIntoUser(rows)
 	}
 
 	return nil, fmt.Errorf("failed to update user")
 }
 
-func CreateRequest(Email, Password string) (*User, error) {
+func (s *userStoreImpl) CreateRequest(Email, Password string) (*User, error) {
 	encpwd, err := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
@@ -194,7 +160,7 @@ func CreateRequest(Email, Password string) (*User, error) {
 	}, nil
 }
 
-func UpdateRequest(UserName, Password string) (*User, error) {
+func (s *userStoreImpl) UpdateRequest(UserName, Password string) (*User, error) {
 
 	user := new(User)
 
@@ -219,7 +185,43 @@ func (usr *User) ValidPassword(password string) bool {
 		[]byte(password)) == nil
 }
 
-func ScanIntoUser(rows *sql.Rows) (*User, error) {
+type userStoreImpl struct {
+	db *sql.DB
+}
+
+var NewUserStore = func(db *sql.DB) UserStore {
+	return &userStoreImpl{
+		db: db,
+	}
+}
+
+type UserStore interface {
+	GetUserByEmail(email string) (*User, error)
+	GetUserByID(ID uuid.UUID) (*User, error)
+
+	CreateUser(user *User) (*User, error)
+	CreateRequest(email, password string) (*User, error)
+
+	UpdateUser(user *User) (*User, error)
+	UpdateRequest(userName, password string) (*User, error)
+}
+
+type User struct {
+	ID                  uuid.UUID `json:"id"`
+	CreatedAt           time.Time `json:"created_at"`
+	UpdatedAt           time.Time `json:"updated_at"`
+	UserName            string    `json:"user_name"`
+	Email               string    `json:"email"`
+	HashedPassword      string    `json:"-"`
+	IsAdmin             bool      `json:"-"`
+	IsVerified          bool      `json:"-"`
+	IsDeleted           bool      `json:"-"`
+	LastRequest         time.Time `json:"-"`
+	LastLogin           time.Time `json:"-"`
+	FailedLoginAttempts int       `json:"-"`
+}
+
+func scanIntoUser(rows *sql.Rows) (*User, error) {
 	u := new(User)
 	err := rows.Scan(
 		&u.ID,

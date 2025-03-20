@@ -1,10 +1,35 @@
 package data
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"sort"
 	"strings"
 )
+
+type ContextKey string
+
+const ContextKeyStore ContextKey = "ContextKeyStore"
+
+type Store struct {
+	User UserStore
+}
+
+func NewStore(db *sql.DB) *Store {
+	return &Store{
+		User: NewUserStore(db),
+	}
+}
+
+func WithStore(ctx context.Context, store *Store) context.Context {
+	return context.WithValue(ctx, ContextKeyStore, store)
+}
+
+func GetStore(ctx context.Context) (*Store, bool) {
+	store, ok := ctx.Value(ContextKeyStore).(*Store)
+	return store, ok
+}
 
 // BuildInsertQuery builds an INSERT query for the given table and data map.
 // It returns a query string with numbered placeholders and a slice of argument values.

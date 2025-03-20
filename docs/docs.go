@@ -119,15 +119,6 @@ const docTemplate = `{
                     "User"
                 ],
                 "summary": "Get user by apiKey",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "User",

@@ -1,17 +1,17 @@
 package middleware
 
 import (
-	"database/sql"
 	"net/http"
 
-	"github.com/kevin-griley/api/internal/db"
+	"github.com/kevin-griley/api/internal/data"
 )
 
-func DBMiddleware(dbConn *sql.DB) func(next http.HandlerFunc) http.HandlerFunc {
+func StoreMiddleware(store *data.Store) func(next http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			ctx := db.WithDB(r.Context(), dbConn)
+			ctx := data.WithStore(r.Context(), store)
 			next(w, r.WithContext(ctx))
+
 		}
 	}
 }

@@ -25,17 +25,22 @@ type PostUserRequest struct {
 func HandlePostUser(w http.ResponseWriter, r *http.Request) *ApiError {
 	ctx := r.Context()
 
+	store, ok := data.GetStore(ctx)
+	if !ok {
+		return &ApiError{http.StatusInternalServerError, "no database store in context"}
+	}
+
 	registerReq := new(PostUserRequest)
 	if err := json.NewDecoder(r.Body).Decode(registerReq); err != nil {
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
-	user, err := data.CreateRequest(registerReq.Email, registerReq.Password)
+	user, err := store.User.CreateRequest(registerReq.Email, registerReq.Password)
 	if err != nil {
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
-	resp, err := data.CreateUser(ctx, user)
+	resp, err := store.User.CreateUser(user)
 	if err != nil {
 		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}
@@ -49,19 +54,23 @@ func HandlePostUser(w http.ResponseWriter, r *http.Request) *ApiError {
 // @Security 		ApiKeyAuth
 // @Accept			json
 // @Produce			json
-// @Param			id			path	string	true	"User ID"
 // @Success         200			{object}	data.User	"User"
 // @Failure         400			{object} 	ApiError	"Bad Request"
 // @Router			/user/me	[get]
 func HandleGetUserByKey(w http.ResponseWriter, r *http.Request) *ApiError {
 	ctx := r.Context()
 
+	store, ok := data.GetStore(ctx)
+	if !ok {
+		return &ApiError{http.StatusInternalServerError, "no database store in context"}
+	}
+
 	userID, ok := middleware.GetUserID(ctx)
 	if !ok {
 		return &ApiError{http.StatusBadRequest, "Invalid user id"}
 	}
 
-	user, err := data.GetUserByID(ctx, userID)
+	user, err := store.User.GetUserByID(userID)
 	if err != nil {
 		return &ApiError{http.StatusNotFound, err.Error()}
 	}
@@ -87,12 +96,17 @@ type PatchUserRequest struct {
 func HandlePatchUser(w http.ResponseWriter, r *http.Request) *ApiError {
 	ctx := r.Context()
 
+	store, ok := data.GetStore(ctx)
+	if !ok {
+		return &ApiError{http.StatusInternalServerError, "no database store in context"}
+	}
+
 	patchReq := new(PatchUserRequest)
 	if err := json.NewDecoder(r.Body).Decode(patchReq); err != nil {
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
 
-	user, err := data.UpdateRequest(patchReq.UserName, patchReq.Password)
+	user, err := store.User.UpdateRequest(patchReq.UserName, patchReq.Password)
 	if err != nil {
 		return &ApiError{http.StatusBadRequest, err.Error()}
 	}
@@ -104,7 +118,7 @@ func HandlePatchUser(w http.ResponseWriter, r *http.Request) *ApiError {
 
 	user.ID = userID
 
-	resp, err := data.UpdateUser(ctx, user)
+	resp, err := store.User.UpdateUser(user)
 	if err != nil {
 		return &ApiError{http.StatusInternalServerError, err.Error()}
 	}

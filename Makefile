@@ -5,7 +5,7 @@ build: swag
 	@go build -o bin/api cmd/api/main.go
 
 test:
-	@go test -v ./...
+	@godotenv -f .env go test -v ./...
 
 swag:
 	@swag init -g ./api/main.go -d cmd,internal
