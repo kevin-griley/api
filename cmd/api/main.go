@@ -18,6 +18,7 @@ import (
 //	@title			Rest API
 //	@description	API for the ULD Management System
 //
+// @version         1.0
 // @BasePath					/
 // @securityDefinitions.apikey	Bearer Authentication
 // @tokenUrl http://localhost:3000/login

@@ -3,7 +3,8 @@
     "info": {
         "description": "API for the ULD Management System",
         "title": "Rest API",
-        "contact": {}
+        "contact": {},
+        "version": "1.0"
     },
     "basePath": "/",
     "paths": {

@@ -1,24 +1,21 @@
-import { Fetcher, Middleware } from 'openapi-typescript-fetch'
+import createFetchClient from 'openapi-fetch';
+import createClient from 'openapi-react-query';
+import type { paths } from '@/types/schema';
+import { QueryClient } from '@tanstack/react-query';
 
-import type { paths, definitions } from "../schema";
+const fetchClient = createFetchClient<paths>({
+    baseUrl: 'http://localhost:3000',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
 
-const logger: Middleware = async (url, init, next) => {
-    console.log(`fetching ${url}`)
-    const response = await next(url, init)
-    console.log(`fetched ${url}`)
-    return response
-  }
+export const $api = createClient(fetchClient);
 
-const client = Fetcher.for<paths>()
-
-client.configure({
-    baseUrl: "http://localhost:3000",
-    init: {
-        headers: {
-            "Content-Type": "application/json"
+export const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            retry: false,
         },
     },
-    use: [logger],
-})
-
-export { client, type definitions }
+});

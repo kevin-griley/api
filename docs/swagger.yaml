@@ -92,6 +92,7 @@ info:
   contact: {}
   description: API for the ULD Management System
   title: Rest API
+  version: "1.0"
 paths:
   /login:
     post:

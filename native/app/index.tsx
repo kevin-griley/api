@@ -1,37 +1,37 @@
-import { client } from "@/api/client";
-import Button from "@/components/Button";
-import { Alert, Text, View } from "react-native";
+import { $api } from '@/api/client';
+import Button from '@/components/Button';
+
+import { Alert, Text, View } from 'react-native';
 
 export default function Index() {
+    const { mutateAsync } = $api.useMutation('post', '/login', {
+        onSuccess: (data) => {
+            console.log(data);
+            Alert.alert('Success', 'Login Successful');
+        },
+        onError: (error) => {
+            console.error(error);
+            Alert.alert(`Error: ${error.status}`, error.error);
+        },
+    });
 
-  const mutateLogin = client.path('/login').method('post').create()
-
-  const handleLogin = () => {
-   mutateLogin({
-      email: "Kevin",
-      password: "Kevin"
-    }).then(({ data, status }) => {
-      Alert.alert(`Status: ${status}`, JSON.stringify(data))
-    }).catch((e) => {
-      if (e instanceof mutateLogin.Error) {
-        const { data, status } = e.getActualType()
-        Alert.alert(`Error: ${status}`, JSON.stringify(data.error))
-      } else {
-        Alert.alert('Error', JSON.stringify(e))
-      }
-    })
-  }
-
-  return (
-    <View className="flex-1 items-center justify-center gap-y-2">
-      <View className="items-center">
-        <Text className="text-4xl">Starter Template</Text>
-        <Text className="text-xl">React Native + Golang</Text>
-      </View>
-      <Button
-        label="Click to Login"
-        onPress={handleLogin}
-      />
-    </View>
-  );
+    return (
+        <View className="flex-1 items-center justify-center gap-y-2">
+            <View className="items-center">
+                <Text className="text-4xl">Starter Template</Text>
+                <Text className="text-xl">React Native + Golang</Text>
+            </View>
+            <Button
+                label="Click to Login"
+                onPress={() =>
+                    mutateAsync({
+                        body: {
+                            email: 'Kevin',
+                            password: 'Kevin',
+                        },
+                    })
+                }
+            />
+        </View>
+    );
 }
