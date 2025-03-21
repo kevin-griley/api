@@ -9,6 +9,29 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+func (s *userStoreImpl) CreateRequest(Email, Password string) (*User, error) {
+	encpwd, err := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	userId, err := uuid.NewV7()
+	if err != nil {
+		return nil, err
+	}
+
+	return &User{
+		ID:             userId,
+		CreatedAt:      time.Now().UTC(),
+		UpdatedAt:      time.Now().UTC(),
+		UserName:       Email,
+		Email:          Email,
+		HashedPassword: string(encpwd),
+		LastRequest:    time.Now().UTC(),
+		LastLogin:      time.Now().UTC(),
+	}, nil
+}
+
 func (s *userStoreImpl) CreateUser(u *User) (*User, error) {
 
 	data := map[string]any{
@@ -40,52 +63,30 @@ func (s *userStoreImpl) CreateUser(u *User) (*User, error) {
 
 }
 
-func (s *userStoreImpl) GetUserByEmail(email string) (*User, error) {
+func (s *userStoreImpl) UpdateRequest(UserName, Password string) (*User, error) {
 
-	data := map[string]any{
-		"email": email,
-	}
+	user := new(User)
 
-	query, values, err := BuildSelectQuery("users", data)
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := s.db.Query(query, values...)
-	if err != nil {
-		return nil, err
-	}
-	if rows.Next() {
-		return scanIntoUser(rows)
-	}
-	return nil, fmt.Errorf("user %s not found", email)
-}
-
-func (s *userStoreImpl) GetUserByID(ID uuid.UUID) (*User, error) {
-
-	data := map[string]any{
-		"id": ID,
+	if Password != "" {
+		encpwd, err := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+		user.HashedPassword = string(encpwd)
 	}
 
-	query, values, err := BuildSelectQuery("users", data)
-	if err != nil {
-		return nil, err
+	if UserName != "" {
+		user.UserName = UserName
 	}
 
-	rows, err := s.db.Query(query, values...)
-	if err != nil {
-		return nil, err
-	}
-	if rows.Next() {
-		return scanIntoUser(rows)
-	}
-	return nil, fmt.Errorf("user %s not found", ID)
+	return user, nil
+
 }
 
 func (s *userStoreImpl) UpdateUser(u *User) (*User, error) {
 
 	updateData := make(map[string]any)
-	updateData["updated_at"] = u.UpdatedAt
+	updateData["updated_at"] = time.Now().UTC()
 
 	if u.UserName != "" {
 		updateData["user_name"] = u.UserName
@@ -137,51 +138,50 @@ func (s *userStoreImpl) UpdateUser(u *User) (*User, error) {
 	return nil, fmt.Errorf("failed to update user")
 }
 
-func (s *userStoreImpl) CreateRequest(Email, Password string) (*User, error) {
-	encpwd, err := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
+func (s *userStoreImpl) GetUserByEmail(email string) (*User, error) {
+
+	data := map[string]any{
+		"email": email,
+	}
+
+	query, values, err := BuildSelectQuery("users", data)
 	if err != nil {
 		return nil, err
 	}
 
-	userId, err := uuid.NewV7()
+	rows, err := s.db.Query(query, values...)
+	if err != nil {
+		return nil, err
+	}
+	if rows.Next() {
+		return scanIntoUser(rows)
+	}
+	return nil, fmt.Errorf("user %s not found", email)
+}
+
+func (s *userStoreImpl) GetUserByID(ID uuid.UUID) (*User, error) {
+
+	data := map[string]any{
+		"id": ID,
+	}
+
+	query, values, err := BuildSelectQuery("users", data)
 	if err != nil {
 		return nil, err
 	}
 
-	return &User{
-		ID:             userId,
-		CreatedAt:      time.Now().UTC(),
-		UpdatedAt:      time.Now().UTC(),
-		UserName:       Email,
-		Email:          Email,
-		HashedPassword: string(encpwd),
-		LastRequest:    time.Now().UTC(),
-		LastLogin:      time.Now().UTC(),
-	}, nil
+	rows, err := s.db.Query(query, values...)
+	if err != nil {
+		return nil, err
+	}
+	if rows.Next() {
+		return scanIntoUser(rows)
+	}
+	return nil, fmt.Errorf("user %s not found", ID)
 }
 
-func (s *userStoreImpl) UpdateRequest(UserName, Password string) (*User, error) {
-
-	user := new(User)
-
-	if Password != "" {
-		encpwd, err := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
-		if err != nil {
-			return nil, err
-		}
-		user.HashedPassword = string(encpwd)
-	}
-
-	if UserName != "" {
-		user.UserName = UserName
-	}
-
-	return user, nil
-
-}
-
-func (usr *User) ValidPassword(password string) bool {
-	return bcrypt.CompareHashAndPassword([]byte(usr.HashedPassword),
+func (u *User) ValidPassword(password string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(u.HashedPassword),
 		[]byte(password)) == nil
 }
 

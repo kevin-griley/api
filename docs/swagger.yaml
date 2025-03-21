@@ -1,5 +1,34 @@
 basePath: /
 definitions:
+  data.Organization:
+    properties:
+      address:
+        type: string
+      contact_info:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      organization_type:
+        $ref: '#/definitions/data.OrganizationType'
+      unique_url:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  data.OrganizationType:
+    enum:
+    - Airline
+    - Carrier
+    - Warehouse
+    type: string
+    x-enum-varnames:
+    - Airline
+    - Carrier
+    - Warehouse
   data.User:
     properties:
       created_at:
@@ -20,6 +49,8 @@ definitions:
       status:
         type: integer
     type: object
+  handlers.PatchOrganizationRequest:
+    type: object
   handlers.PatchUserRequest:
     properties:
       password:
@@ -38,6 +69,17 @@ definitions:
     properties:
       token:
         type: string
+    type: object
+  handlers.PostOrganizationRequest:
+    properties:
+      address:
+        type: string
+      contact_info:
+        type: string
+      name:
+        type: string
+      organization_type:
+        $ref: '#/definitions/data.OrganizationType'
     type: object
   handlers.PostUserRequest:
     properties:
@@ -81,6 +123,91 @@ paths:
       summary: Retrive token for bearer authentication
       tags:
       - Auth
+  /organization:
+    post:
+      consumes:
+      - application/json
+      description: Create a new organization
+      parameters:
+      - description: Create Organization Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PostOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization
+          schema:
+            $ref: '#/definitions/data.Organization'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ApiError'
+      summary: Create a new organization
+      tags:
+      - Organization
+  /organization/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get organization by ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization
+          schema:
+            $ref: '#/definitions/data.Organization'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ApiError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get organization by ID
+      tags:
+      - Organization
+    patch:
+      consumes:
+      - application/json
+      description: Patch organization by ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Patch Organization Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PatchOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization
+          schema:
+            $ref: '#/definitions/data.Organization'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ApiError'
+      security:
+      - ApiKeyAuth: []
+      summary: Patch organization by ID
+      tags:
+      - Organization
   /user:
     post:
       consumes:

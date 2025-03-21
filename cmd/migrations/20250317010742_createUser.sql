@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS "organizations" (
     "created_at" TIMESTAMPTZ NOT NULL,
     "updated_at" TIMESTAMPTZ NOT NULL,
     "name" TEXT NOT NULL,
+    "unique_url" CITEXT UNIQUE,
     "address" TEXT NOT NULL,
     "contact_info" TEXT NOT NULL,
     "organization_type" "organization_type_enum" NOT NULL

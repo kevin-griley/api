@@ -45,6 +45,20 @@ func main() {
 	PatchUserHandler := middleware.JwtAuthMiddleware(handlers.HandleApiError(handlers.HandlePatchUser))
 	mux.HandleFunc("PATCH /user/me", PatchUserHandler)
 
+	PostOrganization := middleware.Chain(
+		handlers.HandleApiError(handlers.HandlePostOrganization),
+		middleware.JwtAuthMiddleware,
+		middleware.ScopeMiddleware("organization:write"),
+	)
+	mux.HandleFunc("POST /organization/{ID}", PostOrganization)
+
+	HandlePatchOrganizationByID := middleware.Chain(
+		handlers.HandleApiError(handlers.HandlePatchOrganizationByID),
+		middleware.JwtAuthMiddleware,
+		middleware.ScopeMiddleware("organization:write"),
+	)
+	mux.HandleFunc("PATCH /organization/{ID}", HandlePatchOrganizationByID)
+
 	dbConn, err := db.Init()
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)

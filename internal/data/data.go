@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math/rand"
 	"sort"
 	"strings"
 )
@@ -13,12 +14,14 @@ type ContextKey string
 const ContextKeyStore ContextKey = "ContextKeyStore"
 
 type Store struct {
-	User UserStore
+	User         UserStore
+	Organization OrganizationStore
 }
 
 func NewStore(db *sql.DB) *Store {
 	return &Store{
-		User: NewUserStore(db),
+		User:         NewUserStore(db),
+		Organization: NewOrganizationStore(db),
 	}
 }
 
@@ -189,4 +192,13 @@ func sortedKeys(data map[string]any) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+func GenerateRandomString(n int) string {
+	const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ123456789"
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
