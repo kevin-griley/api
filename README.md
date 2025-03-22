@@ -1,6 +1,6 @@
-# ULD Management System
+# API Starter Template
 
-The ULD Management System is a robust platform for managing Unit Load Devices (ULDs) across airlines, carriers, and warehouses. The backend is built in Go while the mobile client is developed using React Native.
+A simple yet comprehensive API starter template built with Go, incorporating React Native for the client-side. Features include PostgreSQL database integration, Swagger documentation, and a containerized development environment.
 
 ## Getting Started
 
@@ -10,7 +10,6 @@ The ULD Management System is a robust platform for managing Unit Load Devices (U
 - Node.js and npm
 - Make utility
 - Postgres database
-- (Optional) Docker for containerized environments
 
 ### Running the Project
 
@@ -41,7 +40,7 @@ make native
 
 ```
 api/
-├── cmd 
+├── cmd
 ├── data
 ├── db
 ├── docs
